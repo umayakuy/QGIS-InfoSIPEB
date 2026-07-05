@@ -1,12 +1,25 @@
 [general]
-name=INFO-SIPEB
+name=InfoSIPEB
 qgisMinimumVersion=3.28
-description=Interconexión al Geoportal INFO-SIPEB
-version=1.0
-author=Ing. MSc. Jorge Ayala Niño de Guzmán
-email=
-about=Conecta directamente con el Geoportal INFO-SIPEB para consultar y descargar mapas temáticos.
-category=Plugins
+qgisMaximumVersion=4.99
+
+version=1.4.0
+
+description=Access to the official INFO-SIPEB Geoportal from QGIS.
+about=Connects QGIS to the official INFO-SIPEB Geoportal, allowing users to browse and download thematic maps directly from the platform.
+author=Ing. MSc. Jorge Ayala Niño de Guzmán (impulsado por QGISBolivia.org)
+email=umayakiy@gmail.com
+category=Web
 icon=icon.png
+
+homepage=https://qgisbolivia.org/infosipeb
+repository=https://github.com/umayakuy/QGIS-InfoSIPEB
+tracker=https://github.com/umayakuy/QGIS-InfoSIPEB/issues
+
+tags=Bolivia,Geoportal,INFO-SIPEB,QGIS,Thematic Maps
+
 experimental=False
 deprecated=False
+hasProcessingProvider=False
+
+license=GPL-2.0-or-later
