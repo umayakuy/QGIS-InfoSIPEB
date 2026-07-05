@@ -1,0 +1,12 @@
+[general]
+name=INFO-SIPEB
+qgisMinimumVersion=3.28
+description=Interconexión al Geoportal INFO-SIPEB
+version=1.0
+author=Ing. MSc. Jorge Ayala Niño de Guzmán
+email=
+about=Conecta directamente con el Geoportal INFO-SIPEB para consultar y descargar mapas temáticos.
+category=Plugins
+icon=icon.png
+experimental=False
+deprecated=False
