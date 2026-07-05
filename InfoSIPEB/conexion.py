@@ -30,6 +30,41 @@ from qgis.PyQt.QtWidgets import (
 )
 
 
+# Compatibilidad Qt 5 / Qt 6.
+# QGIS 3 usa Qt 5 y QGIS 4 usa Qt 6; qgis.PyQt permite mantener
+# una sola base de código, pero algunos enums cambiaron de ubicación.
+def qt_enum(grupo, nombre):
+    enum_grupo = getattr(Qt, grupo, None)
+    if enum_grupo is not None and hasattr(enum_grupo, nombre):
+        return getattr(enum_grupo, nombre)
+    return getattr(Qt, nombre)
+
+
+def dialog_accepted():
+    dialog_code = getattr(QDialog, "DialogCode", None)
+    if dialog_code is not None and hasattr(dialog_code, "Accepted"):
+        return dialog_code.Accepted
+    return QDialog.Accepted
+
+
+def ejecutar_dialogo(dialogo):
+    metodo_exec = getattr(dialogo, "exec", None)
+    if metodo_exec is None:
+        metodo_exec = getattr(dialogo, "exec_")
+    return metodo_exec()
+
+
+ALIGN_CENTER = qt_enum("AlignmentFlag", "AlignCenter")
+ALIGN_LEFT = qt_enum("AlignmentFlag", "AlignLeft")
+ALIGN_VCENTER = qt_enum("AlignmentFlag", "AlignVCenter")
+KEEP_ASPECT_RATIO = qt_enum("AspectRatioMode", "KeepAspectRatio")
+SMOOTH_TRANSFORMATION = qt_enum("TransformationMode", "SmoothTransformation")
+APPLICATION_MODAL = qt_enum("WindowModality", "ApplicationModal")
+WINDOW_DIALOG = qt_enum("WindowType", "Dialog")
+WINDOW_CUSTOMIZE_HINT = qt_enum("WindowType", "CustomizeWindowHint")
+WINDOW_TITLE_HINT = qt_enum("WindowType", "WindowTitleHint")
+
+
 BASE = "https://infosipeb.planificacion.gob.bo"
 API = f"{BASE}/api/geovisor/geo-sectors?children=true&internal=false"
 
@@ -133,7 +168,7 @@ class SelectorCapasInfoSipeb(QDialog):
         layout = QVBoxLayout(self)
 
         logo = QLabel()
-        logo.setAlignment(Qt.AlignCenter)
+        logo.setAlignment(ALIGN_CENTER)
 
         ruta_logo = obtener_ruta_logo()
 
@@ -144,8 +179,8 @@ class SelectorCapasInfoSipeb(QDialog):
                     pixmap.scaled(
                         390,
                         135,
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation
+                        KEEP_ASPECT_RATIO,
+                        SMOOTH_TRANSFORMATION
                     )
                 )
             else:
@@ -180,7 +215,7 @@ class SelectorCapasInfoSipeb(QDialog):
             "QGISBolivia.org"
         )
         credito.setWordWrap(True)
-        credito.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        credito.setAlignment(ALIGN_LEFT | ALIGN_VCENTER)
         credito.setStyleSheet(
             "font-size: 12px; color: #1F4E79; "
             "margin-top: 0px; margin-bottom: 0px;"
@@ -270,20 +305,24 @@ class SelectorCapasInfoSipeb(QDialog):
         self.accept()
 
 
-def elegir_capa(capas):
+def elegir_capa(capas, iface=None):
     """Muestra una sola ventana para elegir sector, categoría y capa."""
     if not capas:
         mensaje("INFO-SIPEB", "No se encontraron capas con descarga externa habilitada.", "warning")
         return None
 
-    try:
-        parent = iface.mainWindow()
-    except Exception:
+    parent = None
+    if iface is not None:
         parent = None
+        if iface is not None:
+            try:
+                parent = iface.mainWindow()
+            except Exception:
+                parent = None
 
     dialogo = SelectorCapasInfoSipeb(capas, parent)
 
-    if dialogo.exec_() == QDialog.Accepted:
+    if ejecutar_dialogo(dialogo) == dialog_accepted():
         return dialogo.capa_seleccionada
 
     return None
@@ -296,8 +335,8 @@ class VentanaProcesoInfoSipeb(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("INFO-SIPEB - Cargando mapa")
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint)
+        self.setWindowModality(APPLICATION_MODAL)
+        self.setWindowFlags(WINDOW_DIALOG | WINDOW_CUSTOMIZE_HINT | WINDOW_TITLE_HINT)
         self.setMinimumWidth(420)
         self.resize(420, 110)
 
@@ -464,7 +503,7 @@ def crear_capa_temporal(origen, nombre_capa):
     return temporal
 
 
-def cargar_archivos_en_qgis(carpeta, capa):
+def cargar_archivos_en_qgis(carpeta, capa, iface=None):
     """Carga archivos del ZIP directamente al panel de capas, sin crear grupos."""
     vector_ext = {".shp", ".gpkg", ".geojson", ".json", ".kml"}
     raster_ext = {".tif", ".tiff", ".asc"}
@@ -513,20 +552,21 @@ def cargar_archivos_en_qgis(carpeta, capa):
         )
 
     # Zoom a la primera capa cargada, si se está ejecutando desde QGIS.
-    try:
-        iface.mapCanvas().setExtent(cargadas[0].extent())
-        iface.mapCanvas().refresh()
-    except Exception:
-        pass
+    if iface is not None:
+        try:
+            iface.mapCanvas().setExtent(cargadas[0].extent())
+            iface.mapCanvas().refresh()
+        except Exception:
+            pass
 
     return cargadas
 
-def main():
+def main(iface=None):
     progreso = None
 
     try:
         capas = obtener_catalogo()
-        capa = elegir_capa(capas)
+        capa = elegir_capa(capas, iface)
 
         if capa is None:
             return
@@ -544,7 +584,7 @@ def main():
         carpeta = descomprimir_zip(ruta_zip, progreso)
 
         progreso.actualizar("Cargando mapa en QGIS...", 100)
-        cargar_archivos_en_qgis(carpeta, capa)
+        cargar_archivos_en_qgis(carpeta, capa, iface)
 
         # Al terminar correctamente, la ventana temporal desaparece y no se muestra mensaje final.
         progreso.close()
@@ -554,6 +594,3 @@ def main():
         if progreso is not None:
             progreso.close()
         mensaje("Error al cargar mapa INFO-SIPEB", str(e), "error")
-
-
-main()
