@@ -2,6 +2,8 @@
 
 **InfoSIPEB** es un complemento no oficial para **QGIS** desarrollado por **QGISBolivia.org**, que permite la conexión directa con la plataforma oficial **INFO-SIPEB** del Estado Plurinacional de Bolivia para consultar y cargar mapas temáticos de manera rápida y sencilla dentro de QGIS.
 
+![GeoCenso2024](InfoSIPEB.jpg)
+
 ## Contenido del repositorio
 
 Este repositorio incluye:
